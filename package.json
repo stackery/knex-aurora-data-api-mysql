@@ -1,0 +1,31 @@
+{
+  "name": "knex-aurora-data-mysql",
+  "version": "0.0.1",
+  "description": "Knex.js client for AWS Aurora MySQL Data API",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest tests"
+  },
+  "author": "Chase Douglas <chasedouglas@gmail.com>",
+  "license": "ISC",
+  "peerDependencies": {
+    "knex": "^0.21.2"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.720.0",
+    "debug": "^4.1.1",
+    "lodash.map": "^4.6.0"
+  },
+  "devDependencies": {
+    "jest": "^26.1.0",
+    "knex": "^0.21.2"
+  },
+  "jest": {
+    "collectCoverage": true,
+    "coverageThreshold": {
+      "global": {
+        "statements": 100
+      }
+    }
+  }
+}

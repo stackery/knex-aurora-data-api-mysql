@@ -26,6 +26,9 @@
       "global": {
         "statements": 100
       }
-    }
+    },
+    "setupFiles": [
+      "<rootDir>/tests/setup.js"
+    ]
   }
 }

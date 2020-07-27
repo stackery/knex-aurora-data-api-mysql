@@ -25,14 +25,14 @@ First, create an Aurora Serverless Database. Make sure you can execute queries a
 Next install the module:
 
 ```bash
-$ npm install --save knex knex-aurora-data-api
+$ npm install --save knex knex-aurora-data-api-mysql
 ```
 
 Then simply provide this module as the client, supply the database name, and specify the AWS resource identifiers and credentials to connect to your Aurora Serverless cluster:
 
 ```js
 const knex = require('knex')({
-  client: require('knex-aurora-data-api'),
+  client: require('knex-aurora-data-api-mysql'),
   connection: {
     database: '<Database Name>', // e.g. 'project'
     resourceArn: '<Aurora Serverless Cluster ARN>', // e.g. 'arn:aws:rds:us-west-2:012345678901:cluster:mydbcluster'

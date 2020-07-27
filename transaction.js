@@ -29,24 +29,22 @@ class Transaction_AuroraDataMySQL extends Transaction {
   }
 
   async commit(conn, value) {
-    /* istanbul ignore next */
-    if (!('transactionId' in conn.parameters)) {
-      throw new Error(
-        'Attempted to commit a transaction when one is not in progress'
+    // When a transaction is explicitly rolled back this method is still called
+    // at the end of the transaction block after the transaction no longer
+    // exists.
+    if ('transactionId' in conn.parameters) {
+      const params = { ...conn.parameters };
+      delete params.database;
+
+      const { transactionStatus } = await conn.client
+        .commitTransaction(params)
+        .promise();
+      debug(
+        `Transaction ${conn.parameters.transactionId} commit status: ${transactionStatus}`
       );
+      
+      delete conn.parameters.transactionId;
     }
-
-    const params = { ...conn.parameters };
-    delete params.database;
-
-    const { transactionStatus } = await conn.client
-      .commitTransaction(params)
-      .promise();
-    debug(
-      `Transaction ${conn.parameters.transactionId} commit status: ${transactionStatus}`
-    );
-    
-    delete conn.parameters.transactionId;
 
     this._resolver(value);
   }

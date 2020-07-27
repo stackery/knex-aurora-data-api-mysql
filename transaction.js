@@ -1,8 +1,8 @@
 const Transaction = require('knex/lib/transaction');
 const debug = require('debug')('knex:tx');
 
-class Transaction_AuroraDataMySQL extends Transaction {
-  constructor(client) {
+class Transaction_AuroraDataMySQL extends Transaction { // eslint-disable-line camelcase
+  constructor (client) {
     if (client.transacting) {
       throw new Error(
         'Nested transactions are not supported by the Aurora Data API'
@@ -12,7 +12,7 @@ class Transaction_AuroraDataMySQL extends Transaction {
     super(...arguments);
   }
 
-  async begin(conn) {
+  async begin (conn) {
     /* istanbul ignore next */
     if (conn.parameters.transactionId) {
       throw new Error(
@@ -28,7 +28,7 @@ class Transaction_AuroraDataMySQL extends Transaction {
     conn.parameters.transactionId = transactionId;
   }
 
-  async commit(conn, value) {
+  async commit (conn, value) {
     // When a transaction is explicitly rolled back this method is still called
     // at the end of the transaction block after the transaction no longer
     // exists.
@@ -42,14 +42,14 @@ class Transaction_AuroraDataMySQL extends Transaction {
       debug(
         `Transaction ${conn.parameters.transactionId} commit status: ${transactionStatus}`
       );
-      
+
       delete conn.parameters.transactionId;
     }
 
     this._resolver(value);
   }
 
-  async rollback(conn, error) {
+  async rollback (conn, error) {
     /* istanbul ignore next */
     if (!('transactionId' in conn.parameters)) {
       throw new Error(
@@ -83,19 +83,19 @@ class Transaction_AuroraDataMySQL extends Transaction {
   }
 
   /* istanbul ignore next */
-  savepoint(conn) {
+  savepoint (conn) {
     throw new Error('Savepoints are not supported by the Aurora Data API');
   }
 
   /* istanbul ignore next */
-  release(conn, value) {
+  release (conn, value) {
     throw new Error('Savepoints are not supported by the Aurora Data API');
   }
 
   /* istanbul ignore next */
-  rollbackTo(conn, value) {
+  rollbackTo (conn, value) {
     throw new Error('Savepoints are not supported by the Aurora Data API');
   }
 }
 
-module.exports = Transaction_AuroraDataMySQL;
+module.exports = Transaction_AuroraDataMySQL; // eslint-disable-line camelcase

@@ -17,10 +17,30 @@
     "lodash.map": "^4.6.0"
   },
   "devDependencies": {
+    "eslint": "^7.5.0",
+    "eslint-config-semistandard": "^15.0.1",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
     "jest": "^26.1.0",
+    "jest-runner-eslint": "^0.10.0",
     "knex": "^0.21.2"
   },
   "jest": {
+    "projects": [
+      {
+        "displayName": "test"
+      },
+      {
+        "displayName": "lint",
+        "runner": "jest-runner-eslint",
+        "testMatch": [
+          "<rootDir>/**/*.js"
+        ]
+      }
+    ],
     "collectCoverage": true,
     "coverageThreshold": {
       "global": {

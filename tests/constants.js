@@ -403,11 +403,11 @@ module.exports = {
       timestamp3: new Date('2020-04-16T03:21:45.938Z'),
       time3: '04:31:56.734',
       varchar: 'foo',
-      varbinary: Buffer.from([ 98, 97, 114 ]),
-      blob: Buffer.from([ 98, 108, 111, 103 ]),
+      varbinary: Buffer.from([98, 97, 114]),
+      blob: Buffer.from([98, 108, 111, 103]),
       text: 'test',
       enum: 'one',
-      set: new Set([ 'one', 'two' ]),
+      set: new Set(['one', 'two']),
       null: null
     }
   ],
@@ -2032,7 +2032,7 @@ module.exports = {
       ]
     ]
   },
-  PLUCK_RESPONSE_ROWS: [ 1, 2 ],
+  PLUCK_RESPONSE_ROWS: [1, 2],
 
   INSERT_RESPONSE_DATA: {
     generatedFields: [
@@ -2042,7 +2042,7 @@ module.exports = {
     ],
     numberOfRecordsUpdated: 2
   },
-  INSERT_RESPONSE_ROWS: [ 33 ],
+  INSERT_RESPONSE_ROWS: [33],
 
   UPDATE_RESPONSE_DATA: {
     generatedFields: [],

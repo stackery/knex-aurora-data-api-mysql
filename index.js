@@ -1,10 +1,10 @@
 // AWS Aurora MySQL Data API Client
 // -------
 const map = require('lodash.map');
-const Client_MySQL = require('knex/lib/dialects/mysql');
+const Client_MySQL = require('knex/lib/dialects/mysql'); // eslint-disable-line camelcase
 const Transaction = require('./transaction');
 
-function getAuroraDataValue(value) {
+function getAuroraDataValue (value) {
   if ('blobValue' in value) {
     return Buffer.from(value.blobValue, 'base64');
   } else if ('doubleValue' in value) {
@@ -21,7 +21,7 @@ function getAuroraDataValue(value) {
   }
 }
 
-function hydrateRecord(record, fields) {
+function hydrateRecord (record, fields) {
   return record.reduce((row, value, index) => {
     const field = fields[index];
 
@@ -59,37 +59,36 @@ function hydrateRecord(record, fields) {
   }, {});
 }
 
-class Client_AuroraDataMySQL extends Client_MySQL {
-  transaction() {
+class Client_AuroraDataMySQL extends Client_MySQL { // eslint-disable-line camelcase
+  transaction () {
     return new Transaction(this, ...arguments);
   }
 
-  _driver() {
+  _driver () {
     const RDSDataService = require('aws-sdk/clients/rdsdataservice');
-    //const AWS = require('aws-sdk');
 
     return new RDSDataService(this.config.connection.sdkConfig);
   }
 
-  acquireRawConnection() {
+  acquireRawConnection () {
     return {
       client: this.driver,
       parameters: {
         // common parameters for Data API requests
         database: this.config.connection.database,
         resourceArn: this.config.connection.resourceArn,
-        secretArn: this.config.connection.secretArn,
-      },
+        secretArn: this.config.connection.secretArn
+      }
     };
   }
 
-  destroyRawConnection(connection) {}
+  destroyRawConnection (connection) {}
 
-  validateConnection(connection) {
+  validateConnection (connection) {
     return true;
   }
 
-  prepBindings(bindings) {
+  prepBindings (bindings) {
     return bindings.map((value, index) => {
       const name = index.toString();
 
@@ -98,8 +97,8 @@ class Client_AuroraDataMySQL extends Client_MySQL {
           return {
             name,
             value: {
-              booleanValue: value,
-            },
+              booleanValue: value
+            }
           };
 
         case 'number':
@@ -107,16 +106,16 @@ class Client_AuroraDataMySQL extends Client_MySQL {
             return {
               name,
               value: {
-                longValue: value,
-              },
+                longValue: value
+              }
             };
           } else {
             return {
               name,
               typeHint: 'DECIMAL',
               value: {
-                stringValue: value.toString(),
-              },
+                stringValue: value.toString()
+              }
             };
           }
 
@@ -124,8 +123,8 @@ class Client_AuroraDataMySQL extends Client_MySQL {
           return {
             name,
             value: {
-              stringValue: value,
-            },
+              stringValue: value
+            }
           };
 
         case 'object':
@@ -141,8 +140,8 @@ class Client_AuroraDataMySQL extends Client_MySQL {
         return {
           name,
           value: {
-            blobValue: value.toString('base64'),
-          },
+            blobValue: value.toString('base64')
+          }
         };
       }
 
@@ -151,8 +150,8 @@ class Client_AuroraDataMySQL extends Client_MySQL {
           name,
           typeHint: 'TIMESTAMP',
           value: {
-            stringValue: value.toISOString().replace('T', ' ').replace('Z', ''),
-          },
+            stringValue: value.toISOString().replace('T', ' ').replace('Z', '')
+          }
         };
       }
 
@@ -162,39 +161,39 @@ class Client_AuroraDataMySQL extends Client_MySQL {
     });
   }
 
-  positionBindings(sql) {
+  positionBindings (sql) {
     let questionCount = 0;
     return sql.replace(/\?/g, function () {
       return `:${questionCount++}`;
     });
   }
 
-  _stream(connection, obj, stream, options) {
+  _stream (connection, obj, stream, options) {
     throw new Error(
       'Streams are not supported by the aurora-data-mysql dialect'
     );
   }
 
-  async _query(connection, obj) {
+  async _query (connection, obj) {
     obj.data = await connection.client
       .executeStatement({
         ...connection.parameters,
         includeResultMetadata: true,
         sql: obj.sql,
-        parameters: obj.bindings,
+        parameters: obj.bindings
       })
       .promise();
 
     return obj;
   }
 
-  processResponse(resp, runner) {
+  processResponse (resp, runner) {
     const { method, data } = resp;
     const {
       columnMetadata: fields,
       generatedFields,
       numberOfRecordsUpdated,
-      records,
+      records
     } = data;
 
     const rows = records
@@ -228,4 +227,4 @@ class Client_AuroraDataMySQL extends Client_MySQL {
 
 Client_AuroraDataMySQL.prototype.driverName = 'aurora-data-mysql';
 
-module.exports = Client_AuroraDataMySQL;
+module.exports = Client_AuroraDataMySQL; // eslint-disable-line camelcase

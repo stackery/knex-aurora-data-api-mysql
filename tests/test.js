@@ -1,3 +1,5 @@
+/* eslint-env jest */
+
 const constants = require('./constants');
 
 const RDSDataService = require('aws-sdk/clients/rdsdataservice');
@@ -63,7 +65,7 @@ test('Prepares bindings', async () => {
     float: 5.5,
     text: 'foobar',
     null: null,
-    binary: Buffer.from([ 1, 2, 3]),
+    binary: Buffer.from([1, 2, 3]),
     date: new Date('2020-01-01')
   });
 
@@ -127,7 +129,7 @@ test('Errors on undefined bindings', async () => {
 
 test('Errors on unknown bindings', async () => {
   await expect(knex.select('*').from('foo').where({
-    value: Symbol()
+    value: Symbol() // eslint-disable-line symbol-description
   })).rejects.toThrow("Unknown binding value type 'symbol' for value at index 0");
 
   expect(mockExecuteStatement).toHaveBeenCalledTimes(0);
@@ -346,7 +348,7 @@ test('Raw query returns rows and fields', async () => {
 
   expect(response).toEqual({
     fields: constants.FIRST_RESPONSE_DATA.columnMetadata,
-    rows: [ constants.FIRST_RESPONSE_ROWS ]
+    rows: [constants.FIRST_RESPONSE_ROWS]
   });
 });
 
@@ -356,7 +358,7 @@ test('Query in transaction', async () => {
   mockCommitTransactionPromise.mockResolvedValue(constants.COMMIT_TRANSACTION_DATA);
 
   const rows = await knex.transaction(trx => trx.select('*').from('foo'));
-  
+
   expect(mockBeginTransaction).toHaveBeenCalledTimes(1);
   expect(mockBeginTransaction).toHaveBeenCalledWith({
     resourceArn: constants.AURORA_CLUSTER_ARN,
@@ -394,7 +396,7 @@ test('Nested transactions throw error', async () => {
   await expect(
     knex.transaction(trx => trx.transaction(trx2 => trx2.select('*').from('foo')))
   ).rejects.toThrow('Nested transactions are not supported by the Aurora Data API');
-  
+
   expect(mockBeginTransaction).toHaveBeenCalledTimes(1);
   expect(mockBeginTransaction).toHaveBeenCalledWith({
     resourceArn: constants.AURORA_CLUSTER_ARN,
@@ -420,7 +422,7 @@ test('Manual transaction rollbacks', async () => {
   await expect(
     knex.transaction(trx => trx.rollback())
   ).rejects.toThrow('Transaction rejected with non-error: undefined');
-  
+
   expect(mockBeginTransaction).toHaveBeenCalledTimes(1);
   expect(mockBeginTransaction).toHaveBeenCalledWith({
     resourceArn: constants.AURORA_CLUSTER_ARN,
@@ -453,7 +455,7 @@ test('Manual transaction rollbacks without error', async () => {
   });
 
   await knexNoReject.transaction(trx => trx.rollback(), { doNotRejectOnRollback: true });
-  
+
   expect(mockBeginTransaction).toHaveBeenCalledTimes(1);
   expect(mockBeginTransaction).toHaveBeenCalledWith({
     resourceArn: constants.AURORA_CLUSTER_ARN,

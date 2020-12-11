@@ -66,8 +66,20 @@ class Client_AuroraDataMySQL extends Client_MySQL { // eslint-disable-line camel
 
   _driver () {
     const RDSDataService = require('aws-sdk/clients/rdsdataservice');
+    const https = require('https');
 
-    return new RDSDataService(this.config.connection.sdkConfig);
+    const agent = new https.Agent({
+      keepAlive: true
+    });
+
+    const config = {
+      httpOptions: {
+        agent
+      },
+      ...(this.config.connection.sdkConfig || {})
+    };
+
+    return new RDSDataService(config);
   }
 
   acquireRawConnection () {

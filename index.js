@@ -55,7 +55,7 @@ function hydrateRecord (record, fields) {
         break;
     }
 
-    row[field.name] = value;
+    row[field.label] = value;
 
     return row;
   }, {});

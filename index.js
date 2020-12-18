@@ -15,6 +15,8 @@ function getAuroraDataValue (value) {
     return value.longValue;
   } else if ('stringValue' in value) {
     return value.stringValue;
+  } else if ('booleanValue' in value) {
+    return value.booleanValue;
   } else /* istanbul ignore next */ {
     const type = Object.keys(value)[0];
     throw new Error(`Unknown value type '${type}' from row`);
@@ -53,7 +55,7 @@ function hydrateRecord (record, fields) {
         break;
     }
 
-    row[field.name] = value;
+    row[field.label] = value;
 
     return row;
   }, {});

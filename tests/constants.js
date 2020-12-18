@@ -308,6 +308,22 @@ module.exports = {
         tableName: 'foo',
         type: 4,
         typeName: 'INT'
+      },
+      {
+        arrayBaseColumnType: 0,
+        isAutoIncrement: false,
+        isCaseSensitive: false,
+        isCurrency: false,
+        isSigned: false,
+        label: 'bool',
+        name: 'bool',
+        nullable: 0,
+        precision: 1,
+        scale: 0,
+        schemaName: '',
+        tableName: 'foo',
+        type: -7,
+        typeName: 'BIT'
       }
     ],
     numberOfRecordsUpdated: 0,
@@ -384,6 +400,9 @@ module.exports = {
         },
         {
           isNull: true
+        },
+        {
+          booleanValue: true
         }
       ]
     ]
@@ -408,7 +427,8 @@ module.exports = {
       text: 'test',
       enum: 'one',
       set: new Set(['one', 'two']),
-      null: null
+      null: null,
+      bool: true
     }
   ],
 
@@ -1852,6 +1872,68 @@ module.exports = {
         {
           stringValue: ''
         }
+      ],
+      [
+        {
+          stringValue: 'def'
+        },
+        {
+          stringValue: 'test'
+        },
+        {
+          stringValue: 'foo'
+        },
+        {
+          stringValue: 'bool'
+        },
+        {
+          longValue: 22
+        },
+        {
+          stringValue: '0'
+        },
+        {
+          stringValue: 'NO'
+        },
+        {
+          stringValue: 'tinyint'
+        },
+        {
+          isNull: true
+        },
+        {
+          isNull: true
+        },
+        {
+          longValue: 3
+        },
+        {
+          longValue: 0
+        },
+        {
+          isNull: true
+        },
+        {
+          isNull: true
+        },
+        {
+          isNull: true
+        },
+        {
+          stringValue: 'tinyint(1)'
+        },
+        {
+          stringValue: ''
+        },
+        {
+          stringValue: ''
+        },
+        {
+          stringValue: 'select,insert'
+        },
+        {
+          stringValue: ''
+        }
       ]
     ]
   },
@@ -1964,6 +2046,12 @@ module.exports = {
       type: 'set',
       maxLength: 13,
       nullable: true
+    },
+    bool: {
+      defaultValue: '0',
+      type: 'tinyint',
+      maxLength: null,
+      nullable: false
     }
   },
 

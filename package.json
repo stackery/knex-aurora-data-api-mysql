@@ -1,6 +1,6 @@
 {
   "name": "knex-aurora-data-api-mysql",
-  "version": "1.0.3",
+  "version": "2.0.0-beta1",
   "description": "Knex.js driver for MySQL AWS Aurora Data API",
   "homepage": "https://github.com/txase/knex-aurora-data-api-mysql",
   "repository": "txase/knex-aurora-data-api-mysql",
@@ -14,11 +14,11 @@
     "knex": "^0.21.2"
   },
   "dependencies": {
-    "aws-sdk": "^2.720.0",
     "debug": "^4.1.1",
     "lodash.map": "^4.6.0"
   },
   "devDependencies": {
+    "aws-sdk": "^2.720.0",
     "eslint": "^7.5.0",
     "eslint-config-semistandard": "^15.0.1",
     "eslint-config-standard": "^14.1.1",

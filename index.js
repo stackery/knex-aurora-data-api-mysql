@@ -15,9 +15,9 @@ function getAuroraDataValue (value) {
     return value.longValue;
   } else if ('stringValue' in value) {
     return value.stringValue;
-  } else if ('booleanValue' in value) {
+  } else /* istanbul ignore else */ if ('booleanValue' in value) {
     return value.booleanValue;
-  } else /* istanbul ignore next */ {
+  } else {
     const type = Object.keys(value)[0];
     throw new Error(`Unknown value type '${type}' from row`);
   }

@@ -2122,6 +2122,12 @@ module.exports = {
   },
   PLUCK_RESPONSE_ROWS: [1, 2],
 
+  DEL_RESPONSE_DATA: {
+    generatedFields: [],
+    numberOfRecordsUpdated: 7
+  },
+  DEL_RESPONSE_ROWS: 7,
+
   INSERT_RESPONSE_DATA: {
     generatedFields: [
       {

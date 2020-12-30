@@ -103,6 +103,27 @@ describe('SDK configuration tests', () => {
   });
 });
 
+test('Destroy functionality', async () => {
+  const knex = require('knex')({
+    client: require('..'),
+    connection: {
+      database: constants.DATABASE,
+      resourceArn: constants.AURORA_CLUSTER_ARN,
+      secretArn: constants.SECRET_ARN
+    }
+  });
+
+  mockExecuteStatementPromise.mockResolvedValue(constants.ALL_QUERY_RESPONSE_DATA);
+
+  await knex.select('*').from('foo');
+
+  expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
+
+  knex.destroy();
+
+  await expect(knex.select('*').from('foo')).rejects.toThrow();
+});
+
 describe('Query statement tests', () => {
   const knex = require('knex')({
     client: require('..'),
@@ -298,6 +319,24 @@ describe('Query statement tests', () => {
     });
 
     expect(rows).toEqual(constants.PLUCK_RESPONSE_ROWS);
+  });
+
+  test('.del() works', async () => {
+    mockExecuteStatementPromise.mockResolvedValue(constants.DEL_RESPONSE_DATA);
+
+    const rows = await knex('test').del();
+
+    expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
+    expect(mockExecuteStatement).toHaveBeenCalledWith({
+      resourceArn: constants.AURORA_CLUSTER_ARN,
+      secretArn: constants.SECRET_ARN,
+      database: constants.DATABASE,
+      sql: 'delete from `test`',
+      parameters: [],
+      includeResultMetadata: true
+    });
+
+    expect(rows).toEqual(constants.DEL_RESPONSE_ROWS);
   });
 
   test("Insert returns first row's primary ID", async () => {

@@ -163,14 +163,14 @@ describe('Query statement tests', () => {
       null: null,
       binary: Buffer.from([1, 2, 3]),
       date: new Date('2020-01-01')
-    });
+    }).whereRaw('null2 = ?', [null]);
 
     expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
     expect(mockExecuteStatement).toHaveBeenCalledWith({
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE,
-      sql: 'select * from `foo` where `boolean` = :0 and `int` = :1 and `float` = :2 and `text` = :3 and `null` is null and `binary` = :4 and `date` = :5',
+      sql: 'select * from `foo` where `boolean` = :0 and `int` = :1 and `float` = :2 and `text` = :3 and `null` is null and `binary` = :4 and `date` = :5 and null2 = :6',
       parameters: [
         {
           name: '0',
@@ -209,7 +209,8 @@ describe('Query statement tests', () => {
           value: {
             stringValue: '2020-01-01 00:00:00.000'
           }
-        }
+        },
+        null
       ],
       includeResultMetadata: true
     });

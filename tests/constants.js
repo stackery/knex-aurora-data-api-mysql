@@ -426,7 +426,7 @@ module.exports = {
       blob: Buffer.from([98, 108, 111, 103]),
       text: 'test',
       enum: 'one',
-      set: new Set(['one', 'two']),
+      set: 'one,two',
       null: null,
       bool: true
     }

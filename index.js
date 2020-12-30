@@ -41,16 +41,6 @@ function hydrateRecord (record, fields) {
         value = new Date(value + 'Z');
         break;
 
-      case 'CHAR':
-        if (field.precision === 5) {
-          // ENUM ?
-          break;
-        } else if (field.precision === 13) {
-          // SET ?
-          value = new Set(value.split(','));
-        }
-        break;
-
       default:
         break;
     }

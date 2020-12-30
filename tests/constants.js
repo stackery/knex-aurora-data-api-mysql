@@ -203,6 +203,22 @@ module.exports = {
         isCaseSensitive: false,
         isCurrency: false,
         isSigned: false,
+        label: 'timestamp_null',
+        name: 'timestamp_null',
+        nullable: 1,
+        precision: 19,
+        scale: 0,
+        schemaName: '',
+        tableName: 'foo',
+        type: 93,
+        typeName: 'TIMESTAMP'
+      },
+      {
+        arrayBaseColumnType: 0,
+        isAutoIncrement: false,
+        isCaseSensitive: false,
+        isCurrency: false,
+        isSigned: false,
         label: 'varchar',
         name: 'varchar',
         nullable: 1,
@@ -366,6 +382,9 @@ module.exports = {
           stringValue: '04:31:56.734'
         },
         {
+          isNull: true
+        },
+        {
           stringValue: 'foo'
         },
         {
@@ -421,6 +440,7 @@ module.exports = {
       datetime3: new Date('2020-04-16T15:36:54.384Z'),
       timestamp3: new Date('2020-04-16T03:21:45.938Z'),
       time3: '04:31:56.734',
+      timestamp_null: null,
       varchar: 'foo',
       varbinary: Buffer.from([98, 97, 114]),
       blob: Buffer.from([98, 108, 111, 103]),

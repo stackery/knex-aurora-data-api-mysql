@@ -426,7 +426,7 @@ module.exports = {
       blob: Buffer.from([98, 108, 111, 103]),
       text: 'test',
       enum: 'one',
-      set: new Set(['one', 'two']),
+      set: 'one,two',
       null: null,
       bool: true
     }
@@ -2121,6 +2121,12 @@ module.exports = {
     ]
   },
   PLUCK_RESPONSE_ROWS: [1, 2],
+
+  DEL_RESPONSE_DATA: {
+    generatedFields: [],
+    numberOfRecordsUpdated: 7
+  },
+  DEL_RESPONSE_ROWS: 7,
 
   INSERT_RESPONSE_DATA: {
     generatedFields: [

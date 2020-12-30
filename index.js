@@ -15,9 +15,9 @@ function getAuroraDataValue (value) {
     return value.longValue;
   } else if ('stringValue' in value) {
     return value.stringValue;
-  } else if ('booleanValue' in value) {
+  } else /* istanbul ignore else */ if ('booleanValue' in value) {
     return value.booleanValue;
-  } else /* istanbul ignore next */ {
+  } else {
     const type = Object.keys(value)[0];
     throw new Error(`Unknown value type '${type}' from row`);
   }
@@ -39,16 +39,6 @@ function hydrateRecord (record, fields) {
       case 'TIMESTAMP':
       case 'YEAR':
         value = new Date(value + 'Z');
-        break;
-
-      case 'CHAR':
-        if (field.precision === 5) {
-          // ENUM ?
-          break;
-        } else if (field.precision === 13) {
-          // SET ?
-          value = new Set(value.split(','));
-        }
         break;
 
       default:
@@ -90,22 +80,33 @@ class Client_AuroraDataMySQL extends Client_MySQL { // eslint-disable-line camel
     return new RDSDataService(config);
   }
 
-  acquireRawConnection () {
-    return {
-      client: this.driver,
-      parameters: {
-        // common parameters for Data API requests
-        database: this.config.connection.database,
-        resourceArn: this.config.connection.resourceArn,
-        secretArn: this.config.connection.secretArn
-      }
+  initializePool() {
+    /* istanbul ignore if */
+    if (this.pool) {
+      this.logger.warn('The pool has already been initialized');
+      return;
+    }
+
+    this.knexUid = 0;
+
+    // common parameters for Data API requests
+    const parameters = {
+      database: this.config.connection.database,
+      resourceArn: this.config.connection.resourceArn,
+      secretArn: this.config.connection.secretArn
     };
-  }
 
-  destroyRawConnection (connection) {}
-
-  validateConnection (connection) {
-    return true;
+    this.pool = {
+      acquire: () => ({
+        promise: Promise.resolve({
+          client: this.driver,
+          parameters,
+          __knexUid: this.knexUid++
+        })
+      }),
+      release: () => true,
+      destroy: () => true
+    };
   }
 
   prepBindings (bindings) {

@@ -29,20 +29,22 @@ function hydrateRecord (record, fields) {
 
     value = getAuroraDataValue(value);
 
-    switch (field.typeName) {
-      case 'DECIMAL':
-        value = Number(value);
-        break;
+    if (value !== null) {
+      switch (field.typeName) {
+        case 'DECIMAL':
+          value = Number(value);
+          break;
 
-      case 'DATE':
-      case 'DATETIME':
-      case 'TIMESTAMP':
-      case 'YEAR':
-        value = new Date(value + 'Z');
-        break;
+        case 'DATE':
+        case 'DATETIME':
+        case 'TIMESTAMP':
+        case 'YEAR':
+          value = new Date(value + 'Z');
+          break;
 
-      default:
-        break;
+        default:
+          break;
+      }
     }
 
     row[field.label] = value;

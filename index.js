@@ -90,22 +90,33 @@ class Client_AuroraDataMySQL extends Client_MySQL { // eslint-disable-line camel
     return new RDSDataService(config);
   }
 
-  acquireRawConnection () {
-    return {
-      client: this.driver,
-      parameters: {
-        // common parameters for Data API requests
-        database: this.config.connection.database,
-        resourceArn: this.config.connection.resourceArn,
-        secretArn: this.config.connection.secretArn
-      }
+  initializePool() {
+    /* istanbul ignore if */
+    if (this.pool) {
+      this.logger.warn('The pool has already been initialized');
+      return;
+    }
+
+    this.knexUid = 0;
+
+    // common parameters for Data API requests
+    const parameters = {
+      database: this.config.connection.database,
+      resourceArn: this.config.connection.resourceArn,
+      secretArn: this.config.connection.secretArn
     };
-  }
 
-  destroyRawConnection (connection) {}
-
-  validateConnection (connection) {
-    return true;
+    this.pool = {
+      acquire: () => ({
+        promise: Promise.resolve({
+          client: this.driver,
+          parameters,
+          __knexUid: this.knexUid++
+        })
+      }),
+      release: () => true,
+      destroy: () => true
+    };
   }
 
   prepBindings (bindings) {

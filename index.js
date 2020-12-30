@@ -160,7 +160,12 @@ class Client_AuroraDataMySQL extends Client_MySQL { // eslint-disable-line camel
       }
 
       if (value === null) {
-        return null;
+        return {
+          name,
+          value: {
+            isNull: true
+          }
+        };
       }
 
       if (Buffer.isBuffer(value) || ArrayBuffer.isView(value)) {

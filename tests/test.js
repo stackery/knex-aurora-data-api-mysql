@@ -210,7 +210,12 @@ describe('Query statement tests', () => {
             stringValue: '2020-01-01 00:00:00.000'
           }
         },
-        null
+        {
+          name: '6',
+          value: {
+            isNull: true
+          }
+        }
       ],
       includeResultMetadata: true
     });

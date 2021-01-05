@@ -379,6 +379,40 @@ describe('Query statement tests', () => {
     expect(inserted).toEqual(constants.INSERT_RESPONSE_ROWS);
   });
 
+  test('Insert returns undefined primary ID when not generated', async () => {
+    mockExecuteStatementPromise.mockResolvedValue(constants.INSERT_RESPONSE_WITHOUT_LAST_ID_DATA);
+
+    const inserted = await knex('test').insert([
+      { int: 33 },
+      { int: 34 }
+    ]);
+
+    expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
+    expect(mockExecuteStatement).toHaveBeenCalledWith({
+      resourceArn: constants.AURORA_CLUSTER_ARN,
+      secretArn: constants.SECRET_ARN,
+      database: constants.DATABASE,
+      sql: 'insert into `test` (`int`) values (:0), (:1)',
+      parameters: [
+        {
+          name: '0',
+          value: {
+            longValue: 33
+          }
+        },
+        {
+          name: '1',
+          value: {
+            longValue: 34
+          }
+        }
+      ],
+      includeResultMetadata: true
+    });
+
+    expect(inserted).toEqual(constants.INSERT_RESPONSE_WITHOUT_LAST_ID_ROWS);
+  });
+
   test('Update returns number of rows updated', async () => {
     mockExecuteStatementPromise.mockResolvedValue(constants.UPDATE_RESPONSE_DATA);
 

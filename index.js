@@ -246,7 +246,11 @@ class Client_AuroraDataMySQL extends Client_MySQL { // eslint-disable-line camel
         return method === 'first' ? rows[0] : rows;
       }
       case 'insert':
-        return [getAuroraDataValue(generatedFields[0])];
+        if (generatedFields.length > 0) {
+          return [getAuroraDataValue(generatedFields[0])];
+        } else {
+          return [undefined];
+        }
       case 'del':
       case 'update':
       case 'counter':

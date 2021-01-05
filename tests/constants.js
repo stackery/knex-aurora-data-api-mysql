@@ -2158,6 +2158,12 @@ module.exports = {
   },
   INSERT_RESPONSE_ROWS: [33],
 
+  INSERT_RESPONSE_WITHOUT_LAST_ID_DATA: {
+    generatedFields: [],
+    numberOfRecordsUpdated: 2
+  },
+  INSERT_RESPONSE_WITHOUT_LAST_ID_ROWS: [undefined],
+
   UPDATE_RESPONSE_DATA: {
     generatedFields: [],
     numberOfRecordsUpdated: 3

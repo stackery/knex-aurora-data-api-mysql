@@ -16,7 +16,7 @@ class Transaction_AuroraDataMySQL extends Transaction { // eslint-disable-line c
     /* istanbul ignore next */
     if (conn.parameters.transactionId) {
       throw new Error(
-        `Attempted to begin a new transaction for connection with existing transaction ${conn.transactionId}`
+        `Attempted to begin a new transaction for connection with existing transaction ${conn.parameters.transactionId}`
       );
     }
 

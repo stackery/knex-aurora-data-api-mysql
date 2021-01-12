@@ -14,9 +14,9 @@ class Transaction_AuroraDataMySQL extends Transaction { // eslint-disable-line c
 
   async begin (conn) {
     /* istanbul ignore next */
-    if (conn.parameters.transactionId) {
+    if (conn.__knexTxId in conn.transactions) {
       throw new Error(
-        `Attempted to begin a new transaction for connection with existing transaction ${conn.parameters.transactionId}`
+        `Attempted to begin a new transaction for connection ${conn.__knexUid} transaction ${conn.__knexTxId} with existing Aurora Data API transaction ID ${conn.transactions[conn.__knexTxId]}`
       );
     }
 
@@ -25,25 +25,28 @@ class Transaction_AuroraDataMySQL extends Transaction { // eslint-disable-line c
       .promise();
     debug(`Transaction begun with id ${transactionId}`);
 
-    conn.parameters.transactionId = transactionId;
+    conn.transactions[conn.__knexTxId] = transactionId;
   }
 
   async commit (conn, value) {
     // When a transaction is explicitly rolled back this method is still called
     // at the end of the transaction block after the transaction no longer
     // exists.
-    if ('transactionId' in conn.parameters) {
-      const params = { ...conn.parameters };
+    if (conn.__knexTxId in conn.transactions) {
+      const params = {
+        ...conn.parameters,
+        transactionId: conn.transactions[conn.__knexTxId]
+      };
       delete params.database;
 
       const { transactionStatus } = await conn.client
         .commitTransaction(params)
         .promise();
       debug(
-        `Transaction ${conn.parameters.transactionId} commit status: ${transactionStatus}`
+        `Transaction ${conn.transactions[conn.__knexTxId]} commit status: ${transactionStatus}`
       );
 
-      delete conn.parameters.transactionId;
+      delete conn.transactions[conn.__knexTxId];
     }
 
     this._resolver(value);
@@ -51,23 +54,26 @@ class Transaction_AuroraDataMySQL extends Transaction { // eslint-disable-line c
 
   async rollback (conn, error) {
     /* istanbul ignore next */
-    if (!('transactionId' in conn.parameters)) {
+    if (!(conn.__knexTxId in conn.transactions)) {
       throw new Error(
         'Attempted to rollback a transaction when one is not in progress'
       );
     }
 
-    const params = { ...conn.parameters };
+    const params = {
+      ...conn.parameters,
+      transactionId: conn.transactions[conn.__knexTxId]
+    };
     delete params.database;
 
     const { transactionStatus } = await conn.client
       .rollbackTransaction(params)
       .promise();
     debug(
-      `Transaction ${conn.parameters.transactionId} rollback status: ${transactionStatus}`
+      `Transaction ${conn.transactions[conn.__knexTxId]} rollback status: ${transactionStatus}`
     );
 
-    delete conn.parameters.transactionId;
+    delete conn.transactions[conn.__knexTxId];
 
     if (error === undefined) {
       if (this.doNotRejectOnRollback) {

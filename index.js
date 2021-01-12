@@ -103,6 +103,7 @@ class Client_AuroraDataMySQL extends Client_MySQL { // eslint-disable-line camel
         promise: Promise.resolve({
           client: this.driver,
           parameters,
+          transactions: {},
           __knexUid: this.knexUid++
         })
       }),
@@ -207,13 +208,19 @@ class Client_AuroraDataMySQL extends Client_MySQL { // eslint-disable-line camel
   }
 
   async _query (connection, obj) {
+    const params = {
+      ...connection.parameters,
+      includeResultMetadata: true,
+      sql: obj.sql,
+      parameters: obj.bindings
+    };
+
+    if ('__knexTxId' in connection) {
+      params.transactionId = connection.transactions[connection.__knexTxId];
+    }
+
     obj.data = await connection.client
-      .executeStatement({
-        ...connection.parameters,
-        includeResultMetadata: true,
-        sql: obj.sql,
-        parameters: obj.bindings
-      })
+      .executeStatement(params)
       .promise();
 
     return obj;

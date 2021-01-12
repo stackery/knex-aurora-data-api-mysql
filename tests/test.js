@@ -627,4 +627,80 @@ describe('Query statement tests', () => {
     expect(mockExecuteStatement).toHaveBeenCalledTimes(0);
     expect(mockCommitTransaction).toHaveBeenCalledTimes(0);
   });
+
+  test('Two transactions in parallel', async () => {
+    mockBeginTransactionPromise
+      .mockResolvedValueOnce(constants.BEGIN_TRANSACTION_DATA)
+      .mockResolvedValueOnce(constants.BEGIN_TRANSACTION_DATA_2);
+    mockExecuteStatementPromise.mockResolvedValue(constants.ALL_QUERY_RESPONSE_DATA);
+    mockCommitTransactionPromise.mockResolvedValue(constants.COMMIT_TRANSACTION_DATA);
+
+    let firstTrxInProgress = false;
+
+    const [rows, rows2] = await Promise.all([
+      knex.transaction(async trx => {
+        firstTrxInProgress = true;
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const rows = trx.select('*').from('foo');
+        firstTrxInProgress = false;
+        return rows;
+      }),
+      knex.transaction(async trx => {
+        if (!firstTrxInProgress) {
+          throw new Error('First transaction not concurrently in progress');
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return trx.select('*').from('foo');
+      })
+    ]);
+
+    expect(mockBeginTransaction).toHaveBeenCalledTimes(2);
+    expect(mockBeginTransaction).toHaveBeenNthCalledWith(1, {
+      resourceArn: constants.AURORA_CLUSTER_ARN,
+      secretArn: constants.SECRET_ARN,
+      database: constants.DATABASE
+    });
+    expect(mockBeginTransaction).toHaveBeenNthCalledWith(2, {
+      resourceArn: constants.AURORA_CLUSTER_ARN,
+      secretArn: constants.SECRET_ARN,
+      database: constants.DATABASE
+    });
+
+    expect(mockExecuteStatement).toHaveBeenCalledTimes(2);
+    expect(mockExecuteStatement).toHaveBeenNthCalledWith(1, {
+      resourceArn: constants.AURORA_CLUSTER_ARN,
+      secretArn: constants.SECRET_ARN,
+      database: constants.DATABASE,
+      transactionId: constants.BEGIN_TRANSACTION_DATA.transactionId,
+      sql: 'select * from `foo`',
+      parameters: [],
+      includeResultMetadata: true
+    });
+    expect(mockExecuteStatement).toHaveBeenNthCalledWith(2, {
+      resourceArn: constants.AURORA_CLUSTER_ARN,
+      secretArn: constants.SECRET_ARN,
+      database: constants.DATABASE,
+      transactionId: constants.BEGIN_TRANSACTION_DATA_2.transactionId,
+      sql: 'select * from `foo`',
+      parameters: [],
+      includeResultMetadata: true
+    });
+
+    expect(mockCommitTransaction).toHaveBeenCalledTimes(2);
+    expect(mockCommitTransaction).toHaveBeenNthCalledWith(1, {
+      resourceArn: constants.AURORA_CLUSTER_ARN,
+      secretArn: constants.SECRET_ARN,
+      transactionId: constants.BEGIN_TRANSACTION_DATA.transactionId
+    });
+    expect(mockCommitTransaction).toHaveBeenNthCalledWith(2, {
+      resourceArn: constants.AURORA_CLUSTER_ARN,
+      secretArn: constants.SECRET_ARN,
+      transactionId: constants.BEGIN_TRANSACTION_DATA_2.transactionId
+    });
+
+    expect(mockRollbackTransaction).toHaveBeenCalledTimes(0);
+
+    expect(rows).toEqual(constants.ALL_QUERY_RESPONSE_ROWS);
+    expect(rows2).toEqual(constants.ALL_QUERY_RESPONSE_ROWS);
+  });
 });

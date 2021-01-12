@@ -82,7 +82,7 @@ class Client_AuroraDataMySQL extends Client_MySQL { // eslint-disable-line camel
     return new RDSDataService(config);
   }
 
-  initializePool() {
+  initializePool () {
     /* istanbul ignore if */
     if (this.pool) {
       this.logger.warn('The pool has already been initialized');

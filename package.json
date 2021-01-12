@@ -6,7 +6,7 @@
   "repository": "txase/knex-aurora-data-api-mysql",
   "main": "index.js",
   "scripts": {
-    "test": "jest tests"
+    "test": "jest"
   },
   "author": "Chase Douglas <chasedouglas@gmail.com>",
   "license": "MIT",
@@ -40,6 +40,9 @@
         "runner": "jest-runner-eslint",
         "testMatch": [
           "<rootDir>/**/*.js"
+        ],
+        "testPathIgnorePatterns": [
+          "/coverage/"
         ]
       }
     ],

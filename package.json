@@ -1,12 +1,12 @@
 {
   "name": "knex-aurora-data-api-mysql",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "description": "Knex.js driver for MySQL AWS Aurora Data API",
   "homepage": "https://github.com/txase/knex-aurora-data-api-mysql",
   "repository": "txase/knex-aurora-data-api-mysql",
   "main": "index.js",
   "scripts": {
-    "test": "jest tests"
+    "test": "jest"
   },
   "author": "Chase Douglas <chasedouglas@gmail.com>",
   "license": "MIT",
@@ -40,6 +40,9 @@
         "runner": "jest-runner-eslint",
         "testMatch": [
           "<rootDir>/**/*.js"
+        ],
+        "testPathIgnorePatterns": [
+          "/coverage/"
         ]
       }
     ],

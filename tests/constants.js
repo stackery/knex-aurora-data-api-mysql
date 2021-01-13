@@ -2178,5 +2178,9 @@ module.exports = {
   },
   ROLLBACK_TRANSACTION_DATA: {
     transactionStatus: 'Rollback Complete'
+  },
+
+  BEGIN_TRANSACTION_DATA_2: {
+    transactionId: 'lksdjfojf_2'
   }
 };

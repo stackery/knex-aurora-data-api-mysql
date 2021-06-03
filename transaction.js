@@ -1,4 +1,4 @@
-const Transaction = require('knex/lib/transaction');
+const Transaction = require('knex/lib/execution/transaction');
 const debug = require('debug')('knex:tx');
 
 class Transaction_AuroraDataMySQL extends Transaction { // eslint-disable-line camelcase

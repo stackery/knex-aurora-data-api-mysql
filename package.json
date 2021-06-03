@@ -28,7 +28,8 @@
     "eslint-plugin-standard": "^4.0.1",
     "jest": "^26.1.0",
     "jest-runner-eslint": "^0.10.0",
-    "knex": "^0.21.2"
+    "knex": "^0.95.6",
+    "mysql2": "^2.2.5"
   },
   "jest": {
     "projects": [

@@ -1,7 +1,7 @@
 // AWS Aurora MySQL Data API Client
 // -------
 const map = require('lodash.map');
-const Client_MySQL = require('knex/lib/dialects/mysql'); // eslint-disable-line camelcase
+const Client_MySQL = require('knex/lib/dialects/mysql2'); // eslint-disable-line camelcase
 const Transaction = require('./transaction');
 
 function getAuroraDataValue (value) {

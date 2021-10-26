@@ -101,6 +101,30 @@ describe('SDK configuration tests', () => {
       }
     });
   });
+
+  test('Uses HTTP agent when called with an HTTP endpoint', () => {
+    require('knex')({
+      client: require('..'),
+      connection: {
+        database: constants.DATABASE,
+        resourceArn: constants.AURORA_CLUSTER_ARN,
+        secretArn: constants.SECRET_ARN,
+        sdkConfig: {
+          endpoint: 'http://localhost:8080'
+        }
+      }
+    });
+
+    expect(RDSDataService).toHaveBeenCalledTimes(1);
+    expect(RDSDataService).toHaveBeenCalledWith({
+      endpoint: 'http://localhost:8080',
+      httpOptions: {
+        agent: expect.objectContaining({
+          protocol: 'http:'
+        })
+      }
+    });
+  });
 });
 
 test('Destroy functionality', async () => {

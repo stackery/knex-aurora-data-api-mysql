@@ -273,7 +273,13 @@ describe('Query statement tests', () => {
 
   test('Errors when attempting to stream results', async () => {
     await expect(
-      knex.select('*').from('foo').stream(stream => stream.pipe(process.stdout))
+      new Promise((resolve, reject) => {
+        knex.select('*').from('foo').stream(stream => stream
+          .on('end', resolve)
+          .on('error', reject)
+          .pipe(process.stdout)
+        );
+      })
     ).rejects.toThrow('Streams are not supported by the aurora-data-mysql dialect');
   });
 
@@ -598,7 +604,7 @@ describe('Query statement tests', () => {
     mockRollbackTransactionPromise.mockResolvedValue(constants.ROLLBACK_TRANSACTION_DATA);
 
     await expect(
-      knex.transaction(trx => trx.rollback())
+      knex.transaction(trx => trx.rollback(), { doNotRejectOnRollback: false })
     ).rejects.toThrow('Transaction rejected with non-error: undefined');
 
     expect(mockBeginTransaction).toHaveBeenCalledTimes(1);

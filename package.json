@@ -11,7 +11,7 @@
   "author": "Chase Douglas <chasedouglas@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "knex": "^0.21.21"
+    "knex": "^0.95.11"
   },
   "dependencies": {
     "debug": "^4.1.1",
@@ -28,7 +28,7 @@
     "eslint-plugin-standard": "^4.0.1",
     "jest": "^27.3.1",
     "jest-runner-eslint": "^1.0.0",
-    "knex": "^0.21.21"
+    "knex": "^0.95.11"
   },
   "jest": {
     "projects": [

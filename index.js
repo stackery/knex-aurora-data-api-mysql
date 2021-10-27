@@ -66,7 +66,9 @@ class Client_AuroraDataMySQL extends Client_MySQL { // eslint-disable-line camel
       throw new Error(`Failed to load aws-sdk rdsdataservice client, did you forget to install it as a dependency? (${err.message})`);
     }
 
-    const https = require('https');
+    const https = this.config.connection.sdkConfig && String(this.config.connection.sdkConfig.endpoint).startsWith('http:')
+      ? require('http')
+      : require('https');
 
     const agent = new https.Agent({
       keepAlive: true

@@ -1,6 +1,6 @@
 {
   "name": "knex-aurora-data-api-mysql",
-  "version": "2.0.9",
+  "version": "2.0.10",
   "description": "Knex.js driver for MySQL AWS Aurora Data API",
   "homepage": "https://github.com/stackery/knex-aurora-data-api-mysql",
   "repository": "stackery/knex-aurora-data-api-mysql",

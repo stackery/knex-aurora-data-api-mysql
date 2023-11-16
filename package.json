@@ -18,7 +18,8 @@
     "lodash.map": "^4.6.0"
   },
   "devDependencies": {
-    "aws-sdk": "^2.720.0",
+    "@aws-sdk/client-rds-data": "^3.451.0",
+    "@smithy/node-http-handler": "^2.1.9",
     "eslint": "^7.5.0",
     "eslint-config-semistandard": "^15.0.1",
     "eslint-config-standard": "^14.1.1",

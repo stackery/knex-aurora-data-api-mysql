@@ -1,3 +1,4 @@
+const { CommitTransactionCommand, BeginTransactionCommand, RollbackTransactionCommand } = require('@aws-sdk/client-rds-data');
 const Transaction = require('knex/lib/execution/transaction');
 const debug = require('debug')('knex:tx');
 
@@ -20,9 +21,12 @@ class Transaction_AuroraDataMySQL extends Transaction { // eslint-disable-line c
       );
     }
 
-    const { transactionId } = await conn.client
-      .beginTransaction({ ...conn.parameters })
-      .promise();
+    const command = new BeginTransactionCommand({
+      ...conn.parameters
+    });
+
+    const { transactionId } = await conn.client.send(command);
+
     debug(`Transaction begun with id ${transactionId}`);
 
     conn.transactions[conn.__knexTxId] = transactionId;
@@ -37,11 +41,13 @@ class Transaction_AuroraDataMySQL extends Transaction { // eslint-disable-line c
         ...conn.parameters,
         transactionId: conn.transactions[conn.__knexTxId]
       };
+
       delete params.database;
 
-      const { transactionStatus } = await conn.client
-        .commitTransaction(params)
-        .promise();
+      const command = new CommitTransactionCommand(params);
+
+      const { transactionStatus } = await conn.client.send(command);
+
       debug(
         `Transaction ${conn.transactions[conn.__knexTxId]} commit status: ${transactionStatus}`
       );
@@ -64,11 +70,13 @@ class Transaction_AuroraDataMySQL extends Transaction { // eslint-disable-line c
       ...conn.parameters,
       transactionId: conn.transactions[conn.__knexTxId]
     };
+
     delete params.database;
 
-    const { transactionStatus } = await conn.client
-      .rollbackTransaction(params)
-      .promise();
+    const command = new RollbackTransactionCommand(params);
+
+    const { transactionStatus } = await conn.client.send(command);
+
     debug(
       `Transaction ${conn.transactions[conn.__knexTxId]} rollback status: ${transactionStatus}`
     );

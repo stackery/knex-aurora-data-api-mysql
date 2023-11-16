@@ -20,6 +20,8 @@
   "devDependencies": {
     "@aws-sdk/client-rds-data": "^3.451.0",
     "@smithy/node-http-handler": "^2.1.9",
+    "aws-sdk-client-mock": "^3.0.0",
+    "aws-sdk-client-mock-jest": "^3.0.0",
     "eslint": "^7.5.0",
     "eslint-config-semistandard": "^15.0.1",
     "eslint-config-standard": "^14.1.1",

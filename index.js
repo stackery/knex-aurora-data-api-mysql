@@ -1,5 +1,7 @@
 // AWS Aurora MySQL Data API Client
 // -------
+const { ExecuteStatementCommand, RDSDataClient } = require('@aws-sdk/client-rds-data');
+const { NodeHttpHandler } = require('@smithy/node-http-handler');
 const map = require('lodash.map');
 const Client_MySQL = require('knex/lib/dialects/mysql'); // eslint-disable-line camelcase
 const Transaction = require('./transaction');
@@ -61,12 +63,14 @@ class Client_AuroraDataMySQL extends Client_MySQL { // eslint-disable-line camel
   _driver () {
     let RDSDataService;
     try {
-      RDSDataService = require('aws-sdk/clients/rdsdataservice');
+      RDSDataService = RDSDataClient;
     } catch (err) { /* istanbul ignore next */
       throw new Error(`Failed to load aws-sdk rdsdataservice client, did you forget to install it as a dependency? (${err.message})`);
     }
 
-    const https = this.config.connection.sdkConfig && String(this.config.connection.sdkConfig.endpoint).startsWith('http:')
+    const isHttp = this.config.connection.sdkConfig && String(this.config.connection.sdkConfig.endpoint).startsWith('http:');
+
+    const https = isHttp
       ? require('http')
       : require('https');
 
@@ -74,10 +78,12 @@ class Client_AuroraDataMySQL extends Client_MySQL { // eslint-disable-line camel
       keepAlive: true
     });
 
+    const requestHandler = new NodeHttpHandler({
+      [isHttp ? 'httpAgent' : 'httpsAgent']: agent
+    });
+
     const config = {
-      httpOptions: {
-        agent
-      },
+      requestHandler,
       ...(this.config.connection.sdkConfig || {})
     };
 
@@ -221,9 +227,9 @@ class Client_AuroraDataMySQL extends Client_MySQL { // eslint-disable-line camel
       params.transactionId = connection.transactions[connection.__knexTxId];
     }
 
-    obj.data = await connection.client
-      .executeStatement(params)
-      .promise();
+    const command = new ExecuteStatementCommand(params);
+
+    obj.data = await connection.client.send(command);
 
     return obj;
   }

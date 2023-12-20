@@ -1,38 +1,32 @@
 /* eslint-env jest */
-
+const { BeginTransactionCommand, CommitTransactionCommand, ExecuteStatementCommand, RDSDataClient, RollbackTransactionCommand } = require('@aws-sdk/client-rds-data');
+const { NodeHttpHandler } = require('@smithy/node-http-handler');
+const { mockClient } = require('aws-sdk-client-mock');
+const client = require('../index');
 const constants = require('./constants');
+require('aws-sdk-client-mock-jest');
 
-const RDSDataService = require('aws-sdk/clients/rdsdataservice');
+const RDSDataService = mockClient(RDSDataClient);
 
-const {
-  mockExecuteStatement,
-  mockExecuteStatementPromise,
-  mockBeginTransaction,
-  mockBeginTransactionPromise,
-  mockCommitTransaction,
-  mockCommitTransactionPromise,
-  mockRollbackTransaction,
-  mockRollbackTransactionPromise
-} = RDSDataService;
+async function init (config) {
+  // We need to call the client in order to grab hold of the constructor values
+  const knex = require('knex')(config);
 
-jest.mock('aws-sdk/clients/rdsdataservice');
+  RDSDataService.on(ExecuteStatementCommand).resolves(constants.ALL_QUERY_RESPONSE_DATA);
+
+  await knex.select('*').from('foo');
+
+  knex.destroy();
+}
 
 beforeEach(() => {
-  RDSDataService.mockClear();
-  mockExecuteStatement.mockClear();
-  mockExecuteStatementPromise.mockReset();
-  mockBeginTransaction.mockClear();
-  mockBeginTransactionPromise.mockReset();
-  mockCommitTransaction.mockClear();
-  mockCommitTransactionPromise.mockReset();
-  mockRollbackTransaction.mockClear();
-  mockRollbackTransactionPromise.mockReset();
+  RDSDataService.reset();
 });
 
 describe('SDK configuration tests', () => {
-  test('Sets TCP Keep Alive when no sdkConfig set', () => {
-    require('knex')({
-      client: require('..'),
+  test('Sets TCP Keep Alive when no sdkConfig set', async () => {
+    await init({
+      client,
       connection: {
         database: constants.DATABASE,
         resourceArn: constants.AURORA_CLUSTER_ARN,
@@ -40,19 +34,23 @@ describe('SDK configuration tests', () => {
       }
     });
 
-    expect(RDSDataService).toHaveBeenCalledTimes(1);
-    expect(RDSDataService).toHaveBeenCalledWith({
-      httpOptions: {
-        agent: expect.objectContaining({
-          keepAlive: true
+    expect(RDSDataService.calls()).toHaveLength(1);
+    expect(RDSDataService.call(0).thisValue.config).toEqual(
+      expect.objectContaining({
+        requestHandler: new NodeHttpHandler({
+          httpAgent: {
+            agent: expect.objectContaining({
+              keepAlive: true
+            })
+          }
         })
-      }
-    });
+      })
+    );
   });
 
-  test('Sets TCP Keep Alive when sdkConfig set', () => {
-    require('knex')({
-      client: require('..'),
+  test('Sets TCP Keep Alive when sdkConfig set', async () => {
+    await init({
+      client,
       connection: {
         database: constants.DATABASE,
         resourceArn: constants.AURORA_CLUSTER_ARN,
@@ -65,46 +63,53 @@ describe('SDK configuration tests', () => {
       }
     });
 
-    expect(RDSDataService).toHaveBeenCalledTimes(1);
-    expect(RDSDataService).toHaveBeenCalledWith({
-      httpOptions: {
-        agent: expect.objectContaining({
-          keepAlive: true
-        })
-      },
-      accessKeyId: 'foo',
-      secretAccessKey: 'bar',
-      sessionToken: 'baz'
-    });
+    expect(RDSDataService.calls()).toHaveLength(1);
+    expect(RDSDataService.call(0).thisValue.config).toEqual(
+      expect.objectContaining({
+        requestHandler: new NodeHttpHandler({
+          httpAgent: {
+            agent: expect.objectContaining({
+              keepAlive: true
+            })
+          }
+        }),
+        accessKeyId: 'foo',
+        secretAccessKey: 'bar',
+        sessionToken: 'baz'
+      })
+    );
   });
 
-  test('Leaves HTTP options when provided in sdkConfig', () => {
-    require('knex')({
-      client: require('..'),
+  test('Leaves HTTP options when provided in sdkConfig', async () => {
+    await init({
+      client,
       connection: {
         database: constants.DATABASE,
         resourceArn: constants.AURORA_CLUSTER_ARN,
         secretArn: constants.SECRET_ARN,
         sdkConfig: {
-          httpOptions: {
-            timeout: 5000
-          }
+          requestHandler: new NodeHttpHandler({
+            requestTimeout: 5000
+          })
         }
       }
     });
 
-    expect(RDSDataService).toHaveBeenCalledTimes(1);
-    expect(RDSDataService).toHaveBeenCalledWith({
-      httpOptions: {
-        agent: undefined,
-        timeout: 5000
-      }
-    });
+    expect(RDSDataService.calls()).toHaveLength(1);
+    expect(RDSDataService.call(0).thisValue.config).toEqual(
+      expect.objectContaining({
+        requestHandler: new NodeHttpHandler({
+          requestHandler: new NodeHttpHandler({
+            requestTimeout: 5000
+          })
+        })
+      })
+    );
   });
 
-  test('Uses HTTP agent when called with an HTTP endpoint', () => {
-    require('knex')({
-      client: require('..'),
+  test('Uses HTTP agent when called with an HTTP endpoint', async () => {
+    await init({
+      client,
       connection: {
         database: constants.DATABASE,
         resourceArn: constants.AURORA_CLUSTER_ARN,
@@ -115,21 +120,31 @@ describe('SDK configuration tests', () => {
       }
     });
 
-    expect(RDSDataService).toHaveBeenCalledTimes(1);
-    expect(RDSDataService).toHaveBeenCalledWith({
-      endpoint: 'http://localhost:8080',
-      httpOptions: {
-        agent: expect.objectContaining({
-          protocol: 'http:'
-        })
-      }
+    await expect(RDSDataService.call(0).thisValue.config.endpoint()).resolves.toEqual({
+      hostname: 'localhost',
+      path: '/',
+      port: 8080,
+      protocol: 'http:'
     });
+
+    expect(RDSDataService.calls()).toHaveLength(1);
+    expect(RDSDataService.call(0).thisValue.config).toEqual(
+      expect.objectContaining({
+        requestHandler: new NodeHttpHandler({
+          httpAgent: {
+            agent: expect.objectContaining({
+              keepAlive: true
+            })
+          }
+        })
+      })
+    );
   });
 });
 
 test('Destroy functionality', async () => {
   const knex = require('knex')({
-    client: require('..'),
+    client,
     connection: {
       database: constants.DATABASE,
       resourceArn: constants.AURORA_CLUSTER_ARN,
@@ -137,11 +152,11 @@ test('Destroy functionality', async () => {
     }
   });
 
-  mockExecuteStatementPromise.mockResolvedValue(constants.ALL_QUERY_RESPONSE_DATA);
+  RDSDataService.on(ExecuteStatementCommand).resolves(constants.ALL_QUERY_RESPONSE_DATA);
 
   await knex.select('*').from('foo');
 
-  expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
+  expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 1);
 
   knex.destroy();
 
@@ -150,7 +165,7 @@ test('Destroy functionality', async () => {
 
 describe('Query statement tests', () => {
   const knex = require('knex')({
-    client: require('..'),
+    client,
     connection: {
       database: constants.DATABASE,
       resourceArn: constants.AURORA_CLUSTER_ARN,
@@ -159,12 +174,12 @@ describe('Query statement tests', () => {
   });
 
   test('Hydrates all response data types', async () => {
-    mockExecuteStatementPromise.mockResolvedValue(constants.ALL_QUERY_RESPONSE_DATA);
+    RDSDataService.on(ExecuteStatementCommand).resolves(constants.ALL_QUERY_RESPONSE_DATA);
 
     const rows = await knex.select('*').from('foo');
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
-    expect(mockExecuteStatement).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(ExecuteStatementCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE,
@@ -177,7 +192,7 @@ describe('Query statement tests', () => {
   });
 
   test('Prepares bindings', async () => {
-    mockExecuteStatementPromise.mockResolvedValue(constants.ALL_QUERY_RESPONSE_DATA);
+    RDSDataService.on(ExecuteStatementCommand).resolves(constants.ALL_QUERY_RESPONSE_DATA);
 
     await knex.select('*').from('foo').where({
       boolean: true,
@@ -189,8 +204,8 @@ describe('Query statement tests', () => {
       date: new Date('2020-01-01')
     }).whereRaw('null2 = ?', [null]);
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
-    expect(mockExecuteStatement).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(ExecuteStatementCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE,
@@ -250,7 +265,7 @@ describe('Query statement tests', () => {
       value: undefined
     })).rejects.toThrow();
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(0);
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 0);
   });
 
   test('Errors on unknown bindings', async () => {
@@ -258,7 +273,7 @@ describe('Query statement tests', () => {
       value: Symbol() // eslint-disable-line symbol-description
     })).rejects.toThrow("Unknown binding value type 'symbol' for value at index 0");
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(0);
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 0);
   });
 
   test('Errors on unknown object bindings', async () => {
@@ -268,7 +283,7 @@ describe('Query statement tests', () => {
       })
     ).rejects.toThrow("Unknown binding value object of class 'Set' for value at index 0");
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(0);
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 0);
   });
 
   test('Errors when attempting to stream results', async () => {
@@ -284,12 +299,12 @@ describe('Query statement tests', () => {
   });
 
   test('.columnInfo() works', async () => {
-    mockExecuteStatementPromise.mockResolvedValue(constants.COLUMN_INFO_RESPONSE_DATA);
+    RDSDataService.on(ExecuteStatementCommand).resolves(constants.COLUMN_INFO_RESPONSE_DATA);
 
     const columnInfo = await knex('test').columnInfo();
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
-    expect(mockExecuteStatement).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(ExecuteStatementCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE,
@@ -315,12 +330,12 @@ describe('Query statement tests', () => {
   });
 
   test('.first() works', async () => {
-    mockExecuteStatementPromise.mockResolvedValue(constants.FIRST_RESPONSE_DATA);
+    RDSDataService.on(ExecuteStatementCommand).resolves(constants.FIRST_RESPONSE_DATA);
 
     const rows = await knex.first('id').from('foo');
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
-    expect(mockExecuteStatement).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(ExecuteStatementCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE,
@@ -340,12 +355,12 @@ describe('Query statement tests', () => {
   });
 
   test('.pluck() works', async () => {
-    mockExecuteStatementPromise.mockResolvedValue(constants.PLUCK_RESPONSE_DATA);
+    RDSDataService.on(ExecuteStatementCommand).resolves(constants.PLUCK_RESPONSE_DATA);
 
     const rows = await knex.pluck('id').from('foo');
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
-    expect(mockExecuteStatement).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(ExecuteStatementCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE,
@@ -358,12 +373,12 @@ describe('Query statement tests', () => {
   });
 
   test('.del() works', async () => {
-    mockExecuteStatementPromise.mockResolvedValue(constants.DEL_RESPONSE_DATA);
+    RDSDataService.on(ExecuteStatementCommand).resolves(constants.DEL_RESPONSE_DATA);
 
     const rows = await knex('test').del();
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
-    expect(mockExecuteStatement).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(ExecuteStatementCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE,
@@ -376,15 +391,15 @@ describe('Query statement tests', () => {
   });
 
   test("Insert returns first row's primary ID", async () => {
-    mockExecuteStatementPromise.mockResolvedValue(constants.INSERT_RESPONSE_DATA);
+    RDSDataService.on(ExecuteStatementCommand).resolves(constants.INSERT_RESPONSE_DATA);
 
     const inserted = await knex('test').insert([
       { int: 33 },
       { int: 34 }
     ]);
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
-    expect(mockExecuteStatement).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(ExecuteStatementCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE,
@@ -410,15 +425,15 @@ describe('Query statement tests', () => {
   });
 
   test('Insert returns undefined primary ID when not generated', async () => {
-    mockExecuteStatementPromise.mockResolvedValue(constants.INSERT_RESPONSE_WITHOUT_LAST_ID_DATA);
+    RDSDataService.on(ExecuteStatementCommand).resolves(constants.INSERT_RESPONSE_WITHOUT_LAST_ID_DATA);
 
     const inserted = await knex('test').insert([
       { int: 33 },
       { int: 34 }
     ]);
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
-    expect(mockExecuteStatement).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(ExecuteStatementCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE,
@@ -444,12 +459,12 @@ describe('Query statement tests', () => {
   });
 
   test('Update returns number of rows updated', async () => {
-    mockExecuteStatementPromise.mockResolvedValue(constants.UPDATE_RESPONSE_DATA);
+    RDSDataService.on(ExecuteStatementCommand).resolves(constants.UPDATE_RESPONSE_DATA);
 
     const inserted = await knex('test').update({ int: 5 }).where({ text: 'foo' });
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
-    expect(mockExecuteStatement).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(ExecuteStatementCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE,
@@ -475,15 +490,15 @@ describe('Query statement tests', () => {
   });
 
   test("Insert returns first row's primary ID", async () => {
-    mockExecuteStatementPromise.mockResolvedValue(constants.INSERT_RESPONSE_DATA);
+    RDSDataService.on(ExecuteStatementCommand).resolves(constants.INSERT_RESPONSE_DATA);
 
     const inserted = await knex('test').insert([
       { int: 33 },
       { int: 34 }
     ]);
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
-    expect(mockExecuteStatement).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(ExecuteStatementCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE,
@@ -509,12 +524,12 @@ describe('Query statement tests', () => {
   });
 
   test('Raw query returns rows and fields', async () => {
-    mockExecuteStatementPromise.mockResolvedValue(constants.FIRST_RESPONSE_DATA);
+    RDSDataService.on(ExecuteStatementCommand).resolves(constants.FIRST_RESPONSE_DATA);
 
     const response = await knex.raw('select `id` from `foo` limit ?', [1]);
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
-    expect(mockExecuteStatement).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(ExecuteStatementCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE,
@@ -537,21 +552,21 @@ describe('Query statement tests', () => {
   });
 
   test('Query in transaction', async () => {
-    mockBeginTransactionPromise.mockResolvedValue(constants.BEGIN_TRANSACTION_DATA);
-    mockExecuteStatementPromise.mockResolvedValue(constants.ALL_QUERY_RESPONSE_DATA);
-    mockCommitTransactionPromise.mockResolvedValue(constants.COMMIT_TRANSACTION_DATA);
+    RDSDataService.on(BeginTransactionCommand).resolves(constants.BEGIN_TRANSACTION_DATA);
+    RDSDataService.on(ExecuteStatementCommand).resolves(constants.ALL_QUERY_RESPONSE_DATA);
+    RDSDataService.on(CommitTransactionCommand).resolves(constants.COMMIT_TRANSACTION_DATA);
 
     const rows = await knex.transaction(trx => trx.select('*').from('foo'));
 
-    expect(mockBeginTransaction).toHaveBeenCalledTimes(1);
-    expect(mockBeginTransaction).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(BeginTransactionCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(ExecuteStatementCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE
     });
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(1);
-    expect(mockExecuteStatement).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(ExecuteStatementCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE,
@@ -561,76 +576,76 @@ describe('Query statement tests', () => {
       includeResultMetadata: true
     });
 
-    expect(mockCommitTransaction).toHaveBeenCalledTimes(1);
-    expect(mockCommitTransaction).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(CommitTransactionCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(CommitTransactionCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       transactionId: constants.BEGIN_TRANSACTION_DATA.transactionId
     });
 
-    expect(mockRollbackTransaction).toHaveBeenCalledTimes(0);
+    expect(RDSDataService).toHaveReceivedCommandTimes(RollbackTransactionCommand, 0);
 
     expect(rows).toEqual(constants.ALL_QUERY_RESPONSE_ROWS);
   });
 
   test('Nested transactions throw error', async () => {
-    mockBeginTransactionPromise.mockResolvedValue(constants.BEGIN_TRANSACTION_DATA);
-    mockRollbackTransactionPromise.mockResolvedValue(constants.ROLLBACK_TRANSACTION_DATA);
+    RDSDataService.on(BeginTransactionCommand).resolves(constants.BEGIN_TRANSACTION_DATA);
+    RDSDataService.on(RollbackTransactionCommand).resolves(constants.ROLLBACK_TRANSACTION_DATA);
 
     await expect(
       knex.transaction(trx => trx.transaction(trx2 => trx2.select('*').from('foo')))
     ).rejects.toThrow('Nested transactions are not supported by the Aurora Data API');
 
-    expect(mockBeginTransaction).toHaveBeenCalledTimes(1);
-    expect(mockBeginTransaction).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(BeginTransactionCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(BeginTransactionCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE
     });
 
-    expect(mockRollbackTransaction).toHaveBeenCalledTimes(1);
-    expect(mockRollbackTransaction).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(RollbackTransactionCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(RollbackTransactionCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       transactionId: constants.BEGIN_TRANSACTION_DATA.transactionId
     });
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(0);
-    expect(mockCommitTransaction).toHaveBeenCalledTimes(0);
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 0);
+    expect(RDSDataService).toHaveReceivedCommandTimes(CommitTransactionCommand, 0);
   });
 
   test('Manual transaction rollbacks', async () => {
-    mockBeginTransactionPromise.mockResolvedValue(constants.BEGIN_TRANSACTION_DATA);
-    mockRollbackTransactionPromise.mockResolvedValue(constants.ROLLBACK_TRANSACTION_DATA);
+    RDSDataService.on(BeginTransactionCommand).resolves(constants.BEGIN_TRANSACTION_DATA);
+    RDSDataService.on(RollbackTransactionCommand).resolves(constants.ROLLBACK_TRANSACTION_DATA);
 
     await expect(
       knex.transaction(trx => trx.rollback(), { doNotRejectOnRollback: false })
     ).rejects.toThrow('Transaction rejected with non-error: undefined');
 
-    expect(mockBeginTransaction).toHaveBeenCalledTimes(1);
-    expect(mockBeginTransaction).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(BeginTransactionCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(BeginTransactionCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE
     });
 
-    expect(mockRollbackTransaction).toHaveBeenCalledTimes(1);
-    expect(mockRollbackTransaction).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(RollbackTransactionCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(RollbackTransactionCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       transactionId: constants.BEGIN_TRANSACTION_DATA.transactionId
     });
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(0);
-    expect(mockCommitTransaction).toHaveBeenCalledTimes(0);
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 0);
+    expect(RDSDataService).toHaveReceivedCommandTimes(CommitTransactionCommand, 0);
   });
 
   test('Manual transaction rollbacks without error', async () => {
-    mockBeginTransactionPromise.mockResolvedValue(constants.BEGIN_TRANSACTION_DATA);
-    mockRollbackTransactionPromise.mockResolvedValue(constants.ROLLBACK_TRANSACTION_DATA);
+    RDSDataService.on(BeginTransactionCommand).resolves(constants.BEGIN_TRANSACTION_DATA);
+    RDSDataService.on(RollbackTransactionCommand).resolves(constants.ROLLBACK_TRANSACTION_DATA);
 
     const knexNoReject = require('knex')({
-      client: require('..'),
+      client,
       connection: {
         database: constants.DATABASE,
         resourceArn: constants.AURORA_CLUSTER_ARN,
@@ -640,30 +655,28 @@ describe('Query statement tests', () => {
 
     await knexNoReject.transaction(trx => trx.rollback(), { doNotRejectOnRollback: true });
 
-    expect(mockBeginTransaction).toHaveBeenCalledTimes(1);
-    expect(mockBeginTransaction).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(BeginTransactionCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(BeginTransactionCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE
     });
 
-    expect(mockRollbackTransaction).toHaveBeenCalledTimes(1);
-    expect(mockRollbackTransaction).toHaveBeenCalledWith({
+    expect(RDSDataService).toHaveReceivedCommandTimes(RollbackTransactionCommand, 1);
+    expect(RDSDataService).toHaveReceivedCommandWith(RollbackTransactionCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       transactionId: constants.BEGIN_TRANSACTION_DATA.transactionId
     });
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(0);
-    expect(mockCommitTransaction).toHaveBeenCalledTimes(0);
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 0);
+    expect(RDSDataService).toHaveReceivedCommandTimes(CommitTransactionCommand, 0);
   });
 
   test('Two transactions in parallel', async () => {
-    mockBeginTransactionPromise
-      .mockResolvedValueOnce(constants.BEGIN_TRANSACTION_DATA)
-      .mockResolvedValueOnce(constants.BEGIN_TRANSACTION_DATA_2);
-    mockExecuteStatementPromise.mockResolvedValue(constants.ALL_QUERY_RESPONSE_DATA);
-    mockCommitTransactionPromise.mockResolvedValue(constants.COMMIT_TRANSACTION_DATA);
+    RDSDataService.on(BeginTransactionCommand).resolvesOnce(constants.BEGIN_TRANSACTION_DATA).resolvesOnce(constants.BEGIN_TRANSACTION_DATA_2);
+    RDSDataService.on(ExecuteStatementCommand).resolves(constants.ALL_QUERY_RESPONSE_DATA);
+    RDSDataService.on(CommitTransactionCommand).resolves(constants.COMMIT_TRANSACTION_DATA);
 
     let firstTrxInProgress = false;
 
@@ -684,20 +697,20 @@ describe('Query statement tests', () => {
       })
     ]);
 
-    expect(mockBeginTransaction).toHaveBeenCalledTimes(2);
-    expect(mockBeginTransaction).toHaveBeenNthCalledWith(1, {
+    expect(RDSDataService).toHaveReceivedCommandTimes(BeginTransactionCommand, 2);
+    expect(RDSDataService).toHaveReceivedNthSpecificCommandWith(1, BeginTransactionCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE
     });
-    expect(mockBeginTransaction).toHaveBeenNthCalledWith(2, {
+    expect(RDSDataService).toHaveReceivedNthSpecificCommandWith(2, BeginTransactionCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE
     });
 
-    expect(mockExecuteStatement).toHaveBeenCalledTimes(2);
-    expect(mockExecuteStatement).toHaveBeenNthCalledWith(1, {
+    expect(RDSDataService).toHaveReceivedCommandTimes(ExecuteStatementCommand, 2);
+    expect(RDSDataService).toHaveReceivedNthSpecificCommandWith(1, ExecuteStatementCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE,
@@ -706,7 +719,7 @@ describe('Query statement tests', () => {
       parameters: [],
       includeResultMetadata: true
     });
-    expect(mockExecuteStatement).toHaveBeenNthCalledWith(2, {
+    expect(RDSDataService).toHaveReceivedNthSpecificCommandWith(2, ExecuteStatementCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       database: constants.DATABASE,
@@ -716,19 +729,19 @@ describe('Query statement tests', () => {
       includeResultMetadata: true
     });
 
-    expect(mockCommitTransaction).toHaveBeenCalledTimes(2);
-    expect(mockCommitTransaction).toHaveBeenNthCalledWith(1, {
+    expect(RDSDataService).toHaveReceivedCommandTimes(CommitTransactionCommand, 2);
+    expect(RDSDataService).toHaveReceivedNthSpecificCommandWith(1, CommitTransactionCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       transactionId: constants.BEGIN_TRANSACTION_DATA.transactionId
     });
-    expect(mockCommitTransaction).toHaveBeenNthCalledWith(2, {
+    expect(RDSDataService).toHaveReceivedNthSpecificCommandWith(2, CommitTransactionCommand, {
       resourceArn: constants.AURORA_CLUSTER_ARN,
       secretArn: constants.SECRET_ARN,
       transactionId: constants.BEGIN_TRANSACTION_DATA_2.transactionId
     });
 
-    expect(mockRollbackTransaction).toHaveBeenCalledTimes(0);
+    expect(RDSDataService).toHaveReceivedCommandTimes(RollbackTransactionCommand, 0);
 
     expect(rows).toEqual(constants.ALL_QUERY_RESPONSE_ROWS);
     expect(rows2).toEqual(constants.ALL_QUERY_RESPONSE_ROWS);

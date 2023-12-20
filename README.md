@@ -75,6 +75,11 @@ knex.transaction(async trx => {
 ```
 
 ## Breaking Changes
+### Version 2 to 3
+Version 3 uses version 3 of the AWS SDK. This SDK is included automatically in the `nodejs18.x` AWS Lambda runtime and above.
+
+`@aws-sdk/client-rds-data` and `@smithy/node-http-handler` are only included as dev dependencies. You will need to make sure those two packages are available in some form in your project.
+
 ### Version 1 to 2
 Version 1 depended on aws-sdk, which at the time of the change was 71 MB in size. This package may be used in contexts where package size is important and the SDK may already be available, such as AWS Lambda Functions.
 

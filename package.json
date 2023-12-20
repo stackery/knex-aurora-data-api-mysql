@@ -1,6 +1,6 @@
 {
   "name": "knex-aurora-data-api-mysql",
-  "version": "2.0.10",
+  "version": "3.0.0",
   "description": "Knex.js driver for MySQL AWS Aurora Data API",
   "homepage": "https://github.com/stackery/knex-aurora-data-api-mysql",
   "repository": "stackery/knex-aurora-data-api-mysql",
@@ -18,7 +18,10 @@
     "lodash.map": "^4.6.0"
   },
   "devDependencies": {
-    "aws-sdk": "^2.720.0",
+    "@aws-sdk/client-rds-data": "^3.451.0",
+    "@smithy/node-http-handler": "^2.1.9",
+    "aws-sdk-client-mock": "^3.0.0",
+    "aws-sdk-client-mock-jest": "^3.0.0",
     "eslint": "^7.5.0",
     "eslint-config-semistandard": "^15.0.1",
     "eslint-config-standard": "^14.1.1",

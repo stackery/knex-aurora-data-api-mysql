@@ -34,6 +34,7 @@ describe('SDK configuration tests', () => {
       }
     });
 
+    expect(RDSDataService.calls()).toHaveLength(1);
     expect(RDSDataService.call(0).thisValue.config).toEqual(
       expect.objectContaining({
         requestHandler: new NodeHttpHandler({
@@ -62,6 +63,7 @@ describe('SDK configuration tests', () => {
       }
     });
 
+    expect(RDSDataService.calls()).toHaveLength(1);
     expect(RDSDataService.call(0).thisValue.config).toEqual(
       expect.objectContaining({
         requestHandler: new NodeHttpHandler({
@@ -93,6 +95,7 @@ describe('SDK configuration tests', () => {
       }
     });
 
+    expect(RDSDataService.calls()).toHaveLength(1);
     expect(RDSDataService.call(0).thisValue.config).toEqual(
       expect.objectContaining({
         requestHandler: new NodeHttpHandler({
@@ -124,6 +127,7 @@ describe('SDK configuration tests', () => {
       protocol: 'http:'
     });
 
+    expect(RDSDataService.calls()).toHaveLength(1);
     expect(RDSDataService.call(0).thisValue.config).toEqual(
       expect.objectContaining({
         requestHandler: new NodeHttpHandler({

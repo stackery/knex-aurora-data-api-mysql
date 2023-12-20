@@ -41,7 +41,6 @@ class Transaction_AuroraDataMySQL extends Transaction { // eslint-disable-line c
         ...conn.parameters,
         transactionId: conn.transactions[conn.__knexTxId]
       };
-
       delete params.database;
 
       const command = new CommitTransactionCommand(params);
@@ -70,7 +69,6 @@ class Transaction_AuroraDataMySQL extends Transaction { // eslint-disable-line c
       ...conn.parameters,
       transactionId: conn.transactions[conn.__knexTxId]
     };
-
     delete params.database;
 
     const command = new RollbackTransactionCommand(params);
